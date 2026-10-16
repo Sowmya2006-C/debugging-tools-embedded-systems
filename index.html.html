@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Debugging Tools for Embedded Systems | Engineer's Lab</title>
+<meta name="description" content="An educational guide to embedded debugging tools: JTAG, SWD, UART, oscilloscopes, logic analyzers, ICE, software debuggers and trace profiling, with workflow, comparison and best practices.">
+<meta name="theme-color" content="#1f3d2b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%231f3d2b'/%3E%3Crect x='9' y='9' width='14' height='14' fill='none' stroke='%23efe9d6' stroke-width='2'/%3E%3Cpath d='M4 13h5M4 19h5M23 13h5M23 19h5' stroke='%23d9733a' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,700;9..144,900&family=Space+Grotesk:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav" id="top">
+  <a class="logo" href="#home" aria-label="Debugging Tools for Embedded Systems, home"><svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect x="9" y="9" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 13h5M4 19h5M23 13h5M23 19h5M13 4v5M19 4v5M13 23v5M19 23v5" stroke="#d9733a" stroke-width="2"/></svg><span>Debug<em>Lab</em></span></a>
+  <button class="burger" aria-expanded="false" aria-controls="menu" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+  <nav id="menu" aria-label="Main">
+    <a href="#home">Home</a><a href="#overview">Overview</a><a href="#tools">Tools</a><a href="#comparison">Comparison</a><a href="#applications">Applications</a><a href="#about">About</a>
+  </nav>
+</header>
+<main id="main">
+<section class="hero" id="home">
+  <div class="hero-text">
+    <p class="stamp">Bench notes on finding faults inside tiny computers</p>
+    <h1>Debugging Tools for Embedded Systems</h1>
+    <p class="lead">A microcontroller has no screen and no keyboard. When it misbehaves, you need ways to see inside it. This guide explains the instruments engineers use, how they work, and when to pick each one.</p>
+    <div class="cta"><a class="btn solid" href="#tools">Explore the tools</a><a class="btn line" href="#workflow">See the workflow</a></div>
+  </div>
+  <figure class="chip" aria-label="Blueprint illustration of a microcontroller with debug pins labelled SWDIO, SWCLK, TX and RX">
+    <svg viewBox="0 0 420 420" role="img"><title>Microcontroller blueprint</title>
+      <g fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="120" y="120" width="180" height="180"/><rect x="140" y="140" width="140" height="140" stroke-dasharray="4 5" opacity=".6"/><circle cx="148" cy="148" r="6"/>
+        <g id="pins" stroke-width="3"><path d="M150 120V70M180 120V70M210 120V70M240 120V70M270 120V70M150 300v50M180 300v50M210 300v50M240 300v50M270 300v50M120 150H70M120 180H70M120 210H70M120 240H70M120 270H70M300 150h50M300 180h50M300 210h50M300 240h50M300 270h50"/></g>
+        <path class="trace" d="M70 180H30V60h120M350 240h40v110H250M210 350v40h-90" stroke="#d9733a" stroke-width="2.5"/>
+        <path d="M20 400h380M20 392v16M400 392v16" opacity=".5"/>
+      </g>
+      <g font-family="Space Grotesk, monospace" font-size="12" fill="currentColor"><text x="160" y="205">ARM Cortex-M</text><text x="160" y="224">DEBUG CORE</text><text x="76" y="174">SWDIO</text><text x="76" y="204">SWCLK</text><text x="304" y="234">TX</text><text x="304" y="264">RX</text><text x="150" y="414">12 mm package, 48 pins</text></g>
+      <circle cx="30" cy="60" r="6" fill="#d9733a"/><circle cx="390" cy="350" r="6" fill="#d9733a"/>
+    </svg>
+  </figure>
+</section>
+
+<section class="intro" id="overview">
+  <h2>Why debugging inside a chip is hard</h2>
+  <div class="intro-grid">
+    <div><h3>Embedded systems</h3><p>An embedded system is a computer built into a product to do one job: a car's brake controller, a thermostat, an insulin pump. It runs firmware on a microcontroller and talks to sensors and motors directly.</p></div>
+    <div><h3>Debugging</h3><p>Debugging is the disciplined search for why a system does something other than intended. On a PC you print to a console. On a chip you must halt the CPU, probe pins, or record signals.</p></div>
+    <div><h3>Why it matters</h3><p>A bug in a phone app is an annoyance. A bug in a pacemaker or flight controller is a safety event. Good tools shorten the search and prove the fix.</p></div>
+  </div>
+  <ul class="pains" aria-label="Common challenges">
+    <li>Limited visibility: no screen, few spare pins</li><li>Strict timing: stopping the CPU changes behaviour</li><li>Hardware and software faults look identical</li><li>Tiny memory leaves no room for logging</li><li>Faults that appear once a week</li>
+  </ul>
+</section>
+
+<section class="tools" id="tools">
+  <div class="tools-head"><h2>The debugging toolbox</h2><p>Pick an instrument from the rack. Each entry covers how it works, what it offers, where it falls short, and where it is used.</p></div>
+  <div class="bench">
+    <div class="rack" role="tablist" aria-label="Debugging tools" aria-orientation="vertical"></div>
+    <article class="panel" id="panel" role="tabpanel" tabindex="0" aria-live="polite"></article>
+  </div>
+</section>
+
+<section class="flow" id="workflow">
+  <h2>From symptom to verified fix</h2>
+  <p class="sub">Select a stage. The signal on the board moves forward as you do.</p>
+  <div class="steps-wrap">
+    <svg class="wire" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 20h1000" stroke="#7d8c76" stroke-width="2" stroke-dasharray="3 6"/><path id="wireOn" d="M0 20h1000" stroke="#d9733a" stroke-width="4" pathLength="1" stroke-dasharray="1" stroke-dashoffset="1"/></svg>
+    <ol class="steps" id="steps"></ol>
+  </div>
+  <div class="step-detail" id="stepDetail" aria-live="polite"></div>
+</section>
+
+<section class="compare" id="comparison">
+  <h2>Side-by-side comparison</h2>
+  <div class="table-scroll">
+  <table>
+    <caption class="sr">Comparison of embedded debugging tools</caption>
+    <thead><tr><th scope="col">Tool</th><th scope="col">Purpose</th><th scope="col">Requirements</th><th scope="col">Main advantage</th><th scope="col">Typical use</th></tr></thead>
+    <tbody>
+    <tr><th scope="row">JTAG</th><td data-l="Purpose">Run control, memory access, boundary scan</td><td data-l="Requirements">4-5 pins, probe, vendor software</td><td data-l="Advantage">Works on almost any chip and board</td><td data-l="Use">Bring-up, production test</td></tr>
+    <tr><th scope="row">SWD</th><td data-l="Purpose">Two-wire debug of ARM cores</td><td data-l="Requirements">2 pins plus ground, SWD probe</td><td data-l="Advantage">Fewer pins, full debug access</td><td data-l="Use">Cortex-M firmware</td></tr>
+    <tr><th scope="row">UART</th><td data-l="Purpose">Text logging and console</td><td data-l="Requirements">TX/RX pins, USB-serial adapter</td><td data-l="Advantage">Cheapest and simplest</td><td data-l="Use">First-line status messages</td></tr>
+    <tr><th scope="row">Oscilloscope</th><td data-l="Purpose">Measure analog voltage over time</td><td data-l="Requirements">Probes, access to test points</td><td data-l="Advantage">Shows real signal quality</td><td data-l="Use">Noise, power, edge timing</td></tr>
+    <tr><th scope="row">Logic analyzer</th><td data-l="Purpose">Capture many digital lines and decode protocols</td><td data-l="Requirements">Clip leads, shared ground</td><td data-l="Advantage">Protocol decoding on 8-32 channels</td><td data-l="Use">I2C, SPI, CAN issues</td></tr>
+    <tr><th scope="row">ICE</th><td data-l="Purpose">Replace the CPU with a controllable emulator</td><td data-l="Requirements">Emulator pod, matching socket</td><td data-l="Advantage">Deep, non-intrusive control</td><td data-l="Use">Legacy and high-reliability work</td></tr>
+    <tr><th scope="row">Software debugger</th><td data-l="Purpose">Breakpoints, stepping, variables</td><td data-l="Requirements">IDE plus GDB and a probe</td><td data-l="Advantage">Source-level view of logic bugs</td><td data-l="Use">Everyday firmware development</td></tr>
+    <tr><th scope="row">Trace / profiler</th><td data-l="Purpose">Record execution history and timing</td><td data-l="Requirements">ETM/SWO pins, trace probe</td><td data-l="Advantage">Finds bugs without stopping the CPU</td><td data-l="Use">Real-time and performance tuning</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="apps" id="applications">
+  <h2>Where these tools earn their keep</h2>
+  <ul class="app-list" id="appList"></ul>
+</section>
+
+<section class="practice" id="practices">
+  <h2>Hard bugs and how to handle them</h2>
+  <dl class="bugs">
+    <div><dt>Timing bugs</dt><dd>Symptom: works under the debugger, fails at full speed. Capture with a logic analyzer or trace, never with breakpoints.</dd></div>
+    <div><dt>Race conditions</dt><dd>Interrupts and tasks touch shared data. Guard it with critical sections or atomics, and log event order with timestamps.</dd></div>
+    <div><dt>Memory corruption</dt><dd>Use watchpoints on suspect addresses, enable the MPU, add stack canaries and check stack depth.</dd></div>
+    <div><dt>Hardware and software integration</dt><dd>Prove the hardware first with a scope, then the firmware. Change one side at a time.</dd></div>
+    <div><dt>Real-time limits</dt><dd>Halting breaks deadlines. Use trace, GPIO toggles and cycle counters to measure without stopping.</dd></div>
+    <div><dt>Intermittent faults</dt><dd>Log to a ring buffer in RAM, trigger capture on the fault, and record supply voltage and temperature alongside.</dd></div>
+    <div><dt>Low-power debugging</dt><dd>Debug probes can keep clocks alive and hide sleep bugs. Measure current with a shunt and verify behaviour with the probe disconnected.</dd></div>
+  </dl>
+</section>
+
+<section class="faq" id="faq">
+  <h2>Questions people ask</h2>
+  <div class="faq-list" id="faqList"></div>
+</section>
+
+<section class="about" id="about">
+  <div class="about-text"><h2>About this project</h2><p>This website is an academic study of the tools used to find and fix faults in embedded systems. It covers working principles, strengths and limits, a debugging workflow, and real application areas. Click a field below to type your own details; they are saved in your browser only.</p></div>
+  <form class="sheet" onsubmit="return false" aria-label="Project details">
+    <label>Student name<span class="field" contenteditable="true" data-k="name" data-ph="[Your name]" role="textbox"></span></label>
+    <label>Department<span class="field" contenteditable="true" data-k="dept" data-ph="[Your department]" role="textbox"></span></label>
+    <label>College<span class="field" contenteditable="true" data-k="college" data-ph="[Your college]" role="textbox"></span></label>
+    <label>Academic details<span class="field" contenteditable="true" data-k="acad" data-ph="[Course, year, guide, submission date]" role="textbox"></span></label>
+  </form>
+</section>
+</main>
+<footer>
+  <nav aria-label="Footer"><a href="#home">Home</a><a href="#overview">Overview</a><a href="#tools">Tools</a><a href="#workflow">Workflow</a><a href="#comparison">Comparison</a><a href="#applications">Applications</a><a href="#practices">Practices</a><a href="#faq">FAQ</a><a href="#about">About</a></nav>
+  <p>&copy; <span id="year">2026</span> Debugging Tools for Embedded Systems. Educational project.</p>
+  <button class="totop" id="totop" aria-label="Back to top">Back to top</button>
+</footer>
+<script src="script.js"></script>
+</body>
+</html>
